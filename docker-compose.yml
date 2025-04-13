@@ -1,67 +1,85 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: agriculture-app
-    restart: unless-stopped
-    volumes:
-      - ./:/var/www/html
-      - /var/www/html/vendor
-    ports:
-      - "8005:8005"
-    networks:
-      - agriculture-network
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    entrypoint: |
-      sh -c "
-        composer require laravel/octane &&
-        php artisan octane:install --server=swoole &&
-        wait-for-it db:3306 -t 60 -- php artisan migrate --force &&
-        php artisan octane:start --server=swoole --host=0.0.0.0 --port=8005
-      "
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: agriculture-app
+        restart: unless-stopped
+        volumes:
+            - .:/var/www/html
+            - vendor:/var/www/html/vendor
+        ports:
+            - "8005:8005"
+        networks:
+            - agriculture-network
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_started
+        entrypoint: |
+            sh -c "
+              composer require laravel/octane &&
+              php artisan octane:install --server=swoole &&
+              wait-for-it db:3306 -t 60 -- php artisan migrate --force &&
+              php artisan octane:start --server=swoole --host=0.0.0.0 --port=8005
+            "
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
 
-  db:
-    image: mysql:8.0
-    container_name: agriculture-db
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: agriculture_db
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: agriculture
-      MYSQL_PASSWORD: password
-    volumes:
-      - dbdata:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "3336:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "agriculture", "--password=password"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    networks:
-      - agriculture-network
+    db:
+        image: mysql:8.0
+        container_name: agriculture-db
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: agriculture_db
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_USER: agriculture
+            MYSQL_PASSWORD: password
+        volumes:
+            - dbdata:/var/lib/mysql
+            - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+        ports:
+            - "3336:3306"
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "mysqladmin",
+                    "ping",
+                    "-h",
+                    "localhost",
+                    "-u",
+                    "agriculture",
+                    "--password=password",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+        networks:
+            - agriculture-network
 
-  redis:
-    image: redis:alpine
-    container_name: agriculture-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    networks:
-      - agriculture-network
+    redis:
+        image: redis:alpine
+        container_name: agriculture-redis
+        restart: unless-stopped
+        ports:
+            - "6379:6379"
+        networks:
+            - agriculture-network
 
 networks:
-  agriculture-network:
-    name: agriculture-network
-    driver: bridge
+    agriculture-network:
+        name: agriculture-network
+        driver: bridge
 
 volumes:
-  dbdata:
-    name: agriculture-db-data
+    dbdata:
+        name: agriculture-db-data
+    vendor:
+        name: agriculture-vendor
