@@ -1,0 +1,3 @@
+CREATE USER 'admin'@'%' IDENTIFIED BY 'sasa0102';
+GRANT ALL PRIVILEGES ON agriculture_db.* TO 'admin'@'%';
+FLUSH PRIVILEGES;
