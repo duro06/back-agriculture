@@ -7,7 +7,7 @@ services:
         restart: unless-stopped
         volumes:
             - .:/var/www/html
-            - vendor:/var/www/html/vendor
+            # - vendor:/var/www/html/vendor
         ports:
             - "8005:8005"
         networks:
@@ -81,5 +81,5 @@ networks:
 volumes:
     dbdata:
         name: agriculture-db-data
-    vendor:
-        name: agriculture-vendor
+    # vendor:
+    #     name: agriculture-vendor
