@@ -39,6 +39,10 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+        ], [
+            'email.required' => 'Alamat email wajib diisi',
+            'password.required' => 'Password wajib diisi',
+            'email.email' => 'Alamat email tidak valid',
         ]);
 
         if (!Auth::attempt($request->only('email', 'password'))) {
